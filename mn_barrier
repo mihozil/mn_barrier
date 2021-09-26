@@ -1,0 +1,32 @@
+#include <iostream>
+
+using namespace std;
+
+struct mn_barrier {
+    
+    mutex m;
+    long enterCount = 0;
+    long leaveCount = 0;
+    condition_variable cv;
+    
+    void enter() {
+        unique_lock<mutex> lock(m);
+        enterCount+=1;
+    }
+    
+    void leave() {
+        unique_lock<mutex> lock(m);
+        leaveCount+=1;
+        if (enterCount<=leaveCount) {
+            cv.notify_all();
+            enterCount =0;
+            leaveCount = 0;
+        }
+            
+    }
+    
+    void wait() {
+        unique_lock<mutex> lock(m);
+        cv.wait(lock, [&]{return enterCount<=leaveCount;});
+    }
+};
